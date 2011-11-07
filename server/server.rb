@@ -7,9 +7,9 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 root_path = File.dirname(File.dirname(__FILE__)) # one level up
 APP_ROOT = Pathname.new(root_path).realpath.to_s # full path to application root
 
-require 'random_id'
-require 'page'
-require 'favicon'
+require 'sfw/random_id'
+require 'sfw/page'
+require 'sfw/favicon'
 
 class Controller < Sinatra::Base
   set :port, 1111
@@ -39,15 +39,15 @@ class Controller < Sinatra::Base
     # TODO: run just once at startup, and/or only when needed.
     data = File.exists?(File.join(self.class.data_root, "farm")) ? File.join(self.class.data_root, "farm", request.host) : self.class.data_root
     @status = File.join(data, "status")
-    Page.directory = @pages = File.join(data, "pages")
-    Page.default_directory = File.join APP_ROOT, "default-data", "pages"
+    Sfw::Page.directory = @pages = File.join(data, "pages")
+    Sfw::Page.default_directory = File.join APP_ROOT, "default-data", "pages"
     FileUtils.mkdir_p @status
     FileUtils.mkdir_p @pages
   end
 
   helpers do
     def gen_id
-      RandomId.generate
+      Sfw::RandomId.generate
     end
 
     def resolve_links string
@@ -96,11 +96,11 @@ class Controller < Sinatra::Base
 
   get %r{^/([a-z0-9-]+)\.json$} do |name|
     content_type 'application/json'
-    JSON.pretty_generate(Page.get(name))
+    JSON.pretty_generate(Sfw::Page.get(name))
   end
 
   put %r{^/page/([a-z0-9-]+)/action$} do |name|
-    page = Page.get(name)
+    page = Sfw::Page.get(name)
     action = JSON.parse params['action']
     case action['type']
     when 'move'
@@ -118,7 +118,7 @@ class Controller < Sinatra::Base
       return "unfamiliar action"
     end
     ( page['journal'] ||= [] ) << action # todo: journal undo, not redo
-    Page.put name, page
+    Sfw::Page.put name, page
     "ok"
   end
 
